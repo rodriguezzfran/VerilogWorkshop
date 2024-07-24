@@ -164,6 +164,74 @@ module top_module (
 endmodule
 ```
 
+### Valores Lógicos
+
+Un *__bit__* en Verilog puede tomar uno de cuatro posibles valores <br>
+- *__0 -->__* Cero, Lógico Bajo, Falso o Massa
+- *__1 -->__* Uno, Lógico Alto, Potencia
+- *__X -->__* Zona de indeterminación
+- *__Z -->__* Alta impedancia, desconectado o puerto Tri-State
+
+Cabe destacar que *__X__* no es valido en un circuito real, ya que no hay valores deconocidos en un circuito reales, simplemente Verilog no puede decidir entre 0 o 1.
+
+### Tipos de Datos
+
+*__Nets__*
+
+Son utilizados para conectar diferentess partes del diseño, representan una conexión entre componentes, similar a un cable físico en hardware real.
+
+Sus principales tipos son:
+- *__wire:__* Es el tipo de net más común y básico, Se utiliza para conectar dos puntos en un diseño y transportar señales. No retiene su valor, simplemente propaga el valor de la fuente.
+- *__tri:__* Similar a wire, pero utilizado para representar buses de tres estados. Puede estar en un estado de alta impedancia (Z).
+- *__wor (wired OR):__* Representa una conexión donde los conductores están conectados con una operación OR cableada. Si varios drivers intentan controlar la net, el resultado es la operación OR de las señales.
+- *__trior (tri-state wired OR):__* Similar a wor, pero puede estar en un estado de alta impedancia.
+- *__wand (wired AND):__* Representa una conexión donde los conductores están conectados con una operación AND cableada. Si varios drivers intentan controlar la net, el resultado es la operación AND de las señales.
+- *__triand (tri-state wired AND):__* Similar a wand, pero puede estar en un estado de alta impedancia.
+- *__tri0:__* Similar a tri, pero por defecto está en estado bajo (0) cuando no está siendo conducido.
+- *__tri1:__* Similar a tri, pero por defecto está en estado alto (1) cuando no está siendo conducido.
+- *__supply0:__* Representa una conexión a una fuente de alimentación de nivel lógico bajo (0). No puede ser conducido por ninguna otra fuente.
+- *__supply1:__* Representa una conexión a una fuente de alimentación de nivel lógico alto (1). No puede ser conducido por ninguna otra fuente.
+- *__trireg:__* Similar a tri, pero retiene su valor anterior cuando está en alta impedancia. Utilizado para modelar almacenamiento de carga en circuitos analógicos.
+
+*__Register__*
+
+Se usan para el almacenamiento implícito, es decir, que al asignarle un determinado valor a una variable de este estilo, a menos que se modifique dicha variable, conservará el valor previamente asignado.
+
+Las variables *__reg__* es inferida como registro o dispositivo de almacenamientoi cuándo tiene asociado una señal de clock.
+
+*__Integer__*
+
+integer es un tipo de dato de número entero con signo. 
+
+Se utiliza para representar valores enteros que pueden ser positivos o negativos.
+
+En la mayoría de las simulaciones de Verilog, los enteros son de 32 bits de tamaño.
+
+Utilizado frecuentemente en bucles, contadores y para almacenar valores enteros temporales en tareas y funciones.
+
+*__Time__*
+
+Time es un tipo de dato utilizado para almacenar el valor del tiempo simulado.
+
+Generalmente es una variable de 64 bits sin signo, adecuada para representar un rango amplio de valores de tiempo.
+
+Se utiliza para capturar o almacenar el tiempo actual de la simulación, hacer mediciones de tiempo y calcular retrasos.
+
+*__Real__*
+
+real es un tipo de dato de punto flotante.
+
+Se utiliza para representar números reales con decimales, similar a los números de punto flotante en otros lenguajes de programación.
+
+Utilizado para cálculos que requieren precisión decimal, como operaciones matemáticas complejas, valores analógicos y modelado de comportamientos continuos.
+
+
+
+
+
+
+
+
 
 
 

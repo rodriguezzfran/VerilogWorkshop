@@ -239,7 +239,7 @@ Entonces, una declaración de variable quedaría de la siguiente manera
 ```Verilog
 wire / reg <signed / unsigned> [ <range or width_word> ] <name> [ <range or len_memory> ] ;
 ````
-
+tipicamente los mas significativos estan a la izquierda y los menos significativos a la dereca. Esto puede varias segun el protocolo así que hay que estar atento a esto para no provocar inconsitencias en el diseño digital, tanto para diseño como para validación
 
 
 

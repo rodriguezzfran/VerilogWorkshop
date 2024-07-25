@@ -176,54 +176,71 @@ Cabe destacar que *__X__* no es valido en un circuito real, ya que no hay valore
 
 ### Tipos de Datos
 
-*__Nets__*
+- *__Nets__*
 
-Son utilizados para conectar diferentess partes del diseño, representan una conexión entre componentes, similar a un cable físico en hardware real.
+  Son utilizados para conectar diferentess partes del diseño, representan una conexión entre componentes, similar a un cable físico en hardware real.
+  
+  Sus principales tipos son:
+  - *__wire:__* Es el tipo de net más común y básico, Se utiliza para conectar dos puntos en un diseño y transportar señales. No retiene su valor, simplemente propaga el valor de la fuente.
+  - *__tri:__* Similar a wire, pero utilizado para representar buses de tres estados. Puede estar en un estado de alta impedancia (Z).
+  - *__wor (wired OR):__* Representa una conexión donde los conductores están conectados con una operación OR cableada. Si varios drivers intentan controlar la net, el resultado es la operación OR de las señales.
+  - *__trior (tri-state wired OR):__* Similar a wor, pero puede estar en un estado de alta impedancia.
+  - *__wand (wired AND):__* Representa una conexión donde los conductores están conectados con una operación AND cableada. Si varios drivers intentan controlar la net, el resultado es la operación AND de las señales.
+  - *__triand (tri-state wired AND):__* Similar a wand, pero puede estar en un estado de alta impedancia.
+  - *__tri0:__* Similar a tri, pero por defecto está en estado bajo (0) cuando no está siendo conducido.
+  - *__tri1:__* Similar a tri, pero por defecto está en estado alto (1) cuando no está siendo conducido.
+  - *__supply0:__* Representa una conexión a una fuente de alimentación de nivel lógico bajo (0). No puede ser conducido por ninguna otra fuente.
+  - *__supply1:__* Representa una conexión a una fuente de alimentación de nivel lógico alto (1). No puede ser conducido por ninguna otra fuente.
+  - *__trireg:__* Similar a tri, pero retiene su valor anterior cuando está en alta impedancia. Utilizado para modelar almacenamiento de carga en circuitos analógicos.
 
-Sus principales tipos son:
-- *__wire:__* Es el tipo de net más común y básico, Se utiliza para conectar dos puntos en un diseño y transportar señales. No retiene su valor, simplemente propaga el valor de la fuente.
-- *__tri:__* Similar a wire, pero utilizado para representar buses de tres estados. Puede estar en un estado de alta impedancia (Z).
-- *__wor (wired OR):__* Representa una conexión donde los conductores están conectados con una operación OR cableada. Si varios drivers intentan controlar la net, el resultado es la operación OR de las señales.
-- *__trior (tri-state wired OR):__* Similar a wor, pero puede estar en un estado de alta impedancia.
-- *__wand (wired AND):__* Representa una conexión donde los conductores están conectados con una operación AND cableada. Si varios drivers intentan controlar la net, el resultado es la operación AND de las señales.
-- *__triand (tri-state wired AND):__* Similar a wand, pero puede estar en un estado de alta impedancia.
-- *__tri0:__* Similar a tri, pero por defecto está en estado bajo (0) cuando no está siendo conducido.
-- *__tri1:__* Similar a tri, pero por defecto está en estado alto (1) cuando no está siendo conducido.
-- *__supply0:__* Representa una conexión a una fuente de alimentación de nivel lógico bajo (0). No puede ser conducido por ninguna otra fuente.
-- *__supply1:__* Representa una conexión a una fuente de alimentación de nivel lógico alto (1). No puede ser conducido por ninguna otra fuente.
-- *__trireg:__* Similar a tri, pero retiene su valor anterior cuando está en alta impedancia. Utilizado para modelar almacenamiento de carga en circuitos analógicos.
+- *__Register__*
 
-*__Register__*
+  - Se usan para el almacenamiento implícito, es decir, que al asignarle un determinado valor a una variable de este estilo, a menos que se modifique dicha variable, conservará el valor previamente asignado.
+  
+  - Las variables *__reg__* es inferida como registro o dispositivo de almacenamientoi cuándo tiene asociado una señal de clock.
 
-Se usan para el almacenamiento implícito, es decir, que al asignarle un determinado valor a una variable de este estilo, a menos que se modifique dicha variable, conservará el valor previamente asignado.
+- *__Integer__*
+  
+  - integer es un tipo de dato de número entero con signo. 
+  
+  - Se utiliza para representar valores enteros que pueden ser positivos o negativos.
+  
+  - En la mayoría de las simulaciones de Verilog, los enteros son de 32 bits de tamaño.
+  
+  - Utilizado frecuentemente en bucles, contadores y para almacenar valores enteros temporales en tareas y funciones.
 
-Las variables *__reg__* es inferida como registro o dispositivo de almacenamientoi cuándo tiene asociado una señal de clock.
+- *__Time__*
 
-*__Integer__*
+  - Time es un tipo de dato utilizado para almacenar el valor del tiempo simulado.
+  
+  - Generalmente es una variable de 64 bits sin signo, adecuada para representar un rango amplio de valores de tiempo.
+  
+  - Se utiliza para capturar o almacenar el tiempo actual de la simulación, hacer mediciones de tiempo y calcular retrasos.
 
-integer es un tipo de dato de número entero con signo. 
+- *__Real__*
+  
+  - real es un tipo de dato de punto flotante.
+  
+  - Se utiliza para representar números reales con decimales, similar a los números de punto flotante en otros lenguajes de programación.
+  
+  - Utilizado para cálculos que requieren precisión decimal, como operaciones matemáticas complejas, valores analógicos y modelado de comportamientos continuos.
+<br>
 
-Se utiliza para representar valores enteros que pueden ser positivos o negativos.
+Y para que es todo esto? para lo que conocemos como *__Declaración__*. Una declaración sirve para definir y nombrar variables que se utilizarán en el diseño de hardware descrito.
 
-En la mayoría de las simulaciones de Verilog, los enteros son de 32 bits de tamaño.
+Que tiene que contener una declaración? 
+- *__Tipo de dato:__* Como los mencionados anteriormente, aunque los más usados son wire/reg), si la variable es
 
-Utilizado frecuentemente en bucles, contadores y para almacenar valores enteros temporales en tareas y funciones.
+- *__Signed/Unsigned:__* Por defecto siempre son unsigned, entendiendo a esto como que los bits de la variable representan la magnitud del número)
 
-*__Time__*
+- *__Range:__* Define el número de bits o ancho de palabra de la variable. Si es suna memoria, entonces la segunda difinición determina el número de filas. Si no se define el valor es un bit.
 
-Time es un tipo de dato utilizado para almacenar el valor del tiempo simulado.
+Entonces, una declaración de variable quedaría de la siguiente manera
+```Verilog
+wire / reg <signed / unsigned> [ <range or width_word> ] <name> [ <range or len_memory> ] ;
+````
 
-Generalmente es una variable de 64 bits sin signo, adecuada para representar un rango amplio de valores de tiempo.
 
-Se utiliza para capturar o almacenar el tiempo actual de la simulación, hacer mediciones de tiempo y calcular retrasos.
-
-*__Real__*
-
-real es un tipo de dato de punto flotante.
-
-Se utiliza para representar números reales con decimales, similar a los números de punto flotante en otros lenguajes de programación.
-
-Utilizado para cálculos que requieren precisión decimal, como operaciones matemáticas complejas, valores analógicos y modelado de comportamientos continuos.
 
 
 

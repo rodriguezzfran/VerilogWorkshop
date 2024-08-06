@@ -228,7 +228,7 @@ Cabe destacar que *__X__* no es valido en un circuito real, ya que no hay valore
 
 Y para que es todo esto? para lo que conocemos como *__Declaración__*. Una declaración sirve para definir y nombrar variables que se utilizarán en el diseño de hardware descrito.
 
-Que tiene que contener una declaración? 
+Que tiene que contener una *__declaración__*? 
 - *__Tipo de dato:__* Como los mencionados anteriormente, aunque los más usados son wire/reg), si la variable es
 
 - *__Signed/Unsigned:__* Por defecto siempre son unsigned, entendiendo a esto como que los bits de la variable representan la magnitud del número)
@@ -239,7 +239,93 @@ Entonces, una declaración de variable quedaría de la siguiente manera
 ```Verilog
 wire / reg <signed / unsigned> [ <range or width_word> ] <name> [ <range or len_memory> ] ;
 ````
-tipicamente los mas significativos estan a la izquierda y los menos significativos a la dereca. Esto puede varias segun el protocolo así que hay que estar atento a esto para no provocar inconsitencias en el diseño digital, tanto para diseño como para validación
+tipicamente los mas significativos estan a la izquierda y los menos significativos a la dereca. Esto puede varias segun el protocolo así que hay que estar atento a esto para no provocar inconsitencias en el diseño digital, tanto para diseño como para validación. 
+
+Las *__constantes__* son muy similares a las variables y de igual forma pueden ser de cualquier tamaño. Se pueden escribir en diferentes formatos, como el *__decimal__*, *__binario__* o *__hexadecimal__* aunque generalmente el decimal es el formato predefinido.
+
+Una constante se representa de la forma:
+- *__Width__*: Tamaño de la constante.
+- *__Type__*: Tipo de formato.
+- *__Value__*: Valor representado.
+
+En caso de no especificar nada se tomarpa como entero con signo, en cambio, si definimos tamaño y formato se toma como entero sin signo. Podemos ver algunos ejemplos a continuación.
+
+```Verilog
+4'b1010    // Binario, 4 bits, valor 10 (decimal)
+8'hFF      // Hexadecimal, 8 bits, valor 255 (decimal)
+12'o755    // Octal, 12 bits, valor 493 (decimal)
+6'd35      // Decimal, 6 bits, valor 35 (decimal)
+````
+# Los Cuatro Niveles de Abstracción
+
+### Nivel de Comportamiento
+
+Es el nivel más alto de abstracción, describe lo que hace el circuito sin especificar cómo se implementa. Se utiliza principalmente para escribir *__testbenches__* y modelos de referencia (que veremos más adelante).
+
+Este nivel proporciona construcciones de lenguaje de alto nivel como *__for__*, *__while*__, *__repeat__* y *__case__*.
+
+Existen herramientas de síntesis de nivel de comportamiento que toman un modelo completo y lo sintetizan, pero la lógica no suele ser óptima, sobretodo si tenemos que prestar atención a cosas como el área, potencia y velocidad.
+
+*__Verilog__* restringe todas las declaraciones de comportamiento para ser encerrado en un bloque de procedimiento dónde todas las variables en el lado izquierdo de las sentencias deben declararse como *__reg*__, mientras que los operandos del lado derecho en las expresiones pueden ser *__reg__* o *__wire__*.
+
+Generalmente hay 2 tipos de bloqueo de procedimiento los cuales contienen una o varias instrucciones por bloque. Una instrucción de asignación utilizada en un bloque de procedimiento se denomina asignación de procedimiento.
+
+
+
+
+### Nivel de Transferencia de Registros ( RTL )
+
+Describe el flujo de datos y las operaciones en registros bajo el control de un reloj, especifica cómo se mueven los datos entre los registros y las operaciones realizadas sobre ellos. Se suelen utilizar expresiones, operandos y operadores. Dependiendo del dispositivo en el que estamos se implementan de forma diferente, en nuestro caso, en la *__FPGA__* se detecta cuándo en el código *__RTL__* hay operaciones aritméticas y se asignan automaticamente a los bloques *__DPS__*.
+
+Los operadores definidos son los siguientes
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/c616c1a5-2ff6-48ee-b22a-8e3c863cbd00" alt="RGB Diagram" style="box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);">
+</div>
+<br> 
+
+Algunos ejemplos de operaciones
+
+```Verilog
+// Suma (recordemos que queda asignado de esta manera siempre porque es un cable)
+assign c = a + b ;
+
+// Condicional
+assign out = expression ? true : false ;
+assign out = sel ? a : b ;
+
+if ( a ==1’b1 )
+  out = 1 ’b1 ;
+else
+  out = 1 ’b0 ;
+
+// Repeticion
+A = 2 ’b01 ;
+B = { 4 { A } } ; // B = 8 ’b01010101, osea repetir 4 veces A
+
+// Logical Shift
+A = 6'b101111;
+B = A >> 2; // B = 6'b001011 se corren los bits 2 lugares a la derecha, rellena con 0
+
+// Arithmetical Shift
+A = 6'b101111;
+B = A >>> 2; // B = 6'b111011 lo mismo que el logical pero rellena con 1, equivalente a dividir por 2^n
+
+// Reduction
+A = 4'b1011;
+assign out = &A; // out = 1'b0, aplica la AND a todos los bits y produce un solo bit de salida
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 

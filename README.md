@@ -331,12 +331,12 @@ module counter(
 endmodule
 ```
 
+*__Asignación bloqueante ( = )__*
 
-
-
-
-
-
+- Es una asignación regular dentro de un bloque de procedimiento como los vistos anteriormente.
+- Se llaman bloqueantes porque cada asignación bloquea la ejecución de las siguientes asignaciones en la secuencia.
+- Generalmente, para que el códdigo RTL deduzca como es la lógica combinatoria estas asignaciones de procedimiento bloqueantes se colocan dentro del mismo bloque Always.
+- Hay una lista de sensibilidad que permite que sólo se ejecute un bloque cuándo cambia alguna de las variables de la lista, que generalmente van entre paréntesis separadas por una etiqueta "or". A partir de *__Verilog-2001__* se usan listas separadas por coma. También se admite *.
 
 ### Nivel de Transferencia de Registros ( RTL )
 
@@ -381,12 +381,6 @@ A = 4'b1011;
 assign out = &A; // out = 1'b0, aplica la AND a todos los bits y produce un solo bit de salida
 ```
 
-*__Asignación bloqueante ( = )__*
-
-- Es una asignación regular dentro de un bloque de procedimiento como los vistos anteriormente.
-- Se llaman bloqueantes porque cada asignación bloquea la ejecución de las siguientes asignaciones en la secuencia.
-- Generalmente, para que el códdigo RTL deduzca como es la lógica combinatoria estas asignaciones de procedimiento bloqueantes se colocan dentro del mismo bloque Always.
-- Hay una lista de sensibilidad que permite que sólo se ejecute un bloque cuándo cambia alguna de las variables de la lista, que generalmente van entre paréntesis separadas por una etiqueta "or". A partir de *__Verilog-2001__* se usan listas separadas por coma. También se admite *.
 
   
 

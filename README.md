@@ -270,6 +270,71 @@ Existen herramientas de síntesis de nivel de comportamiento que toman un modelo
 
 Generalmente hay 2 tipos de bloqueo de procedimiento los cuales contienen una o varias instrucciones por bloque. Una instrucción de asignación utilizada en un bloque de procedimiento se denomina asignación de procedimiento.
 
+*__Bloque Initial__*
+- Se utiliza para realizar inicializaciones y tareas que se ejecutan solo una vez al comienzo de la simulación.
+- Comienza en t = 0 en tiempo de simulación
+- No es sintetizable, sólo sirve para estímulos en simulación.
+- Si hay más de un bloque de estímulos, se ejecutan todos concurrentemente.
+
+```Verilog
+module testbench;
+    reg clk;
+    reg reset;
+    reg [3:0] data;
+
+    // Bloque initial para inicializar señales y aplicar estímulos
+    initial begin
+        // Inicialización de señales
+        clk = 0;
+        reset = 1;
+        data = 4'b0000;
+
+        // Esperar 10 unidades de tiempo
+        #10; // '#' significa unidad de tiempo
+        
+        // Dejar de resetear el sistema
+        reset = 0;
+
+        // Aplicar algunos valores de datos luego de 5 unidades de tiempo
+        #5 data = 4'b1010;
+        #5 data = 4'b0101;
+        
+        // Finalizar la simulación
+        #20 $finish;
+    end
+endmodule
+```
+
+*__Bloque Always__*
+
+- Se usa para describir la lógica secuencial y conmbinacional.
+- Se ejecuta de forma continua y repetidamente durante la simulación y puede activarse por diferentes eventos tales como *__posedge__* (flanco positivo) o *__negedge__* (flanco negativo).
+- Se puede ejecutar en respuesta a eventos especificos conteniendo una lista de instrucciones.
+- Es sintetizable.
+
+```Verilog
+module counter(
+    input wire clk,
+    input wire reset,
+    output reg [3:0] count
+);
+
+    // Bloque always para la lógica secuencial del contador
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            count <= 4'b0000; // Reinicia el contador cuando reset es alto
+        end else begin
+            count <= count + 1; // Incrementa el contador en cada flanco positivo del reloj
+        end
+    end
+
+endmodule
+```
+
+
+
+
+
 
 
 
@@ -316,6 +381,14 @@ A = 4'b1011;
 assign out = &A; // out = 1'b0, aplica la AND a todos los bits y produce un solo bit de salida
 ```
 
+*__Asignación bloqueante ( = )__*
+
+- Es una asignación regular dentro de un bloque de procedimiento como los vistos anteriormente.
+- Se llaman bloqueantes porque cada asignación bloquea la ejecución de las siguientes asignaciones en la secuencia.
+- Generalmente, para que el códdigo RTL deduzca como es la lógica combinatoria estas asignaciones de procedimiento bloqueantes se colocan dentro del mismo bloque Always.
+- Hay una lista de sensibilidad que permite que sólo se ejecute un bloque cuándo cambia alguna de las variables de la lista, que generalmente van entre paréntesis separadas por una etiqueta "or". A partir de *__Verilog-2001__* se usan listas separadas por coma. También se admite *.
+
+  
 
 
 

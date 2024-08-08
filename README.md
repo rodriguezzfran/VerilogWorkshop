@@ -338,6 +338,30 @@ endmodule
 - Generalmente, para que el códdigo RTL deduzca como es la lógica combinatoria estas asignaciones de procedimiento bloqueantes se colocan dentro del mismo bloque Always.
 - Hay una lista de sensibilidad que permite que sólo se ejecute un bloque cuándo cambia alguna de las variables de la lista, que generalmente van entre paréntesis separadas por una etiqueta "or". A partir de *__Verilog-2001__* se usan listas separadas por coma. También se admite *.
 
+```Verilog
+module combinational_logic (
+    input wire [3:0] a,  // Entrada de 4 bits a
+    input wire [3:0] b,  // Entrada de 4 bits b
+    output reg [3:0] sum,  // Salida de 4 bits para la suma
+    output reg [7:0] product  // Salida de 8 bits para el producto
+);
+
+    // Bloque always que se ejecuta cuando cambia cualquiera de las señales de la lista de sensibilidad
+    always @(a or b) begin
+        // Asignación bloqueante para la suma
+        sum = a + b;  // La suma de a y b se asigna a sum
+        
+        // Asignación bloqueante para el producto
+        product = a * b;  // El producto de a y b se asigna a product
+    end
+
+endmodule
+```
+Ahí vemos como el bloque always sólo se ejecutará ante un cambio de estado de *__a__* o *__b__*, luego la sentencia `product = a * b` no se ejecutará hasta que no termine la suma que la bloquea, de esta manera logramos generar la lógica combinacional de forma secuencial.
+
+Sobre las listas de sensibilidad tenemos que 
+
+
 ### Nivel de Transferencia de Registros ( RTL )
 
 Describe el flujo de datos y las operaciones en registros bajo el control de un reloj, especifica cómo se mueven los datos entre los registros y las operaciones realizadas sobre ellos. Se suelen utilizar expresiones, operandos y operadores. Dependiendo del dispositivo en el que estamos se implementan de forma diferente, en nuestro caso, en la *__FPGA__* se detecta cuándo en el código *__RTL__* hay operaciones aritméticas y se asignan automaticamente a los bloques *__DPS__*.

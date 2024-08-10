@@ -359,14 +359,29 @@ endmodule
 ```
 Ahí vemos como el bloque always sólo se ejecutará ante un cambio de estado de *__a__* o *__b__*, luego la sentencia `product = a * b` no se ejecutará hasta que no termine la suma que la bloquea, de esta manera logramos generar la lógica combinacional de forma secuencial.
 
-Sobre las listas de sensibilidad tenemos que 
+Sobre las listas de sensibilidad son los que se ponen entre paréntesis dentro del bloque always, cuyo cambio de estado es el que dispara la ejecución del bloque. A lo que se refiere la lista de arriba es que pueden estar separados por la sentencia or, una coma o directamente un *, el cuál significa que será sensible a cualquier cambio de las señales leídas dentro del bloque.
 
+````Verilog
+always @(a or b) begin
+    // Código del bloque
+end
+
+always @(a, b) begin
+    // Código del bloque
+end
+
+always @(*) begin
+    // Código del bloque
+end
+````
+
+*__Asignación no bloqueante ( <= )__*
 
 ### Nivel de Transferencia de Registros ( RTL )
 
 Describe el flujo de datos y las operaciones en registros bajo el control de un reloj, especifica cómo se mueven los datos entre los registros y las operaciones realizadas sobre ellos. Se suelen utilizar expresiones, operandos y operadores. Dependiendo del dispositivo en el que estamos se implementan de forma diferente, en nuestro caso, en la *__FPGA__* se detecta cuándo en el código *__RTL__* hay operaciones aritméticas y se asignan automaticamente a los bloques *__DPS__*.
 
-Los operadores definidos son los siguientes
+Los operadores definidos son
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/c616c1a5-2ff6-48ee-b22a-8e3c863cbd00" alt="RGB Diagram" style="box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);">

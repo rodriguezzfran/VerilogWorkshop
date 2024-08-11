@@ -377,6 +377,256 @@ end
 
 *__Asignación no bloqueante ( <= )__*
 
+- Se diferencian de las bloqueantes en que permiten la ejecución en paralelo de múltiples operaciones dentro de un bloque en lugar de frenarlas hasta que termine la anterior.
+- A diferencia de las bloqueantes que se asignan a variables en el momento, acá el simulador no actualiza inmediatamente la variable del lado izquierdo, sino que se almacena en una variable temporal. Luego, cuándo todas las asignaciones del bloque *__always__* hayan terminado, el simulador asigna al mismo tiempo todos los valores almacenados en las variables temporales a las reales.
+- Este mecanismo asegura que todas las operaciones del *__always__* se vewan como si ocurriesen simultaneamente al final del ciclo del reloj.
+- Las variables del lado izquierdo son del tipo *__reg__* logicamente.
+- Se usa para inferir lógica sincrónica.
+- Todas las asignaciones se realizan en paralelo.
+
+*__Bloqueante vs no-Bloqueante__*
+La asignación procedural no bloqueante (<=) debe usarse sólo para modelar lógica secuencial y la asignación procedural bloqueante (=) debe usarse sólo para modelar lógica combinacional.
+Por ninguna razón hay que mezclar ambas.
+
+*__Control de tiempo__*
+
+Verilog proporciona diferentes maneras de modelar el tiempo y los retardos, aunque internamente trabaja sin unidades de tiempo. Paras poder simular tiempo en cualquier instancia del diseño se puede ausar la variable especial `$time`.
+
+- Se pueden insertar retardos en código colocando `*#<numero>`.
+- La simulación detiene la ejecución hasta que hayan pasado esa cantidad de unidades de tiempo, mientras se ejecutan otros bloques en paralelo.
+- No se usa para síntesis.
+
+Otra directiva de control de tiempo es `@` que modela el control basado en enventos (recordemos que ya la usamos para los bloques always). 
+
+- Esta directiva detiene la ejecución de la sentencia hasta que sucede el evento.
+- Esta construcción se usa para modelar lógica combinacional y secuencial en bloques procedurales.
+
+En simulación se puede asignar una unidad de tiempo a los retardos mediante el uso de *__timescale__* que se define como `timescale <time_unit> / <time_precision>`
+- La unidad de tiempo definirá la unidad de los retardos en simulación y la unidad de precisión definirpá como se redondean antes de ser usados en la simulación.
+
+
+*__Sistema Realimentado__*
+
+Sucede cuándo tenés un circuito combinacional único que se realimenta (sobretodo en circuitos dónde las entradas dependen de las salidas de otros bloques tales como contadores o registros), lo cuál provoca que no sea sintetizado ni simulado correctamente, se los suele llamar *__loops combinacionales__* y hay que evitarlos.
+La señal podría seguir cambiando de manera indefinida porque cada cambio en la salida afecta a la entrada y viceversa, por lo tanto, Para evitar loops combinacionales, debes insertar registros en el camino de retroalimentación. Un registro almacena el valor actual y lo mantiene estable hasta la siguiente actualización.
+
+*__Importancia del reset__*
+El reset es crucial porque garantiza que el circuito comienza en un estado conocido. Sin este cualquier valor previo almacenado en un registro puede corromper cálculos futuros ya que un valor indefinido como *__x__* podría propagarse por el circuito. Puede ser síncrono o asíncrono y, en ambos casos, activo por alto o bajo.
+
+- *__Reset sincrónico__*: El reset sólo afecta alk registro cuándo el reloj tiene un flanco positivo. E útil cuándo se quiere que el reset ocurra en sincronía con el resto del circuito .
+- *__Reset Asíncrono__*: El reset puede ocurrir en cualquier momento, independientemente del reloj. Es útil cuándo se quiere que el reset tenga efecto inmediaqto, sin esperar al siguiente flanco.
+
+*__Sentencia CASE__*
+
+Muy parecido al de C y otros lenguajes
+
+- Evalúa una expresión y en función de su valor ejecuta la sentencia o grupo de sentencias agrupadas en el caso que coincida.
+- En caso de no cubrir sus posibles valores, se puede usar un caso *__default__*.
+- Existen dos versiones extra las cuales son *__casex__* (para valores indeterminados) y *__casez__* (para valores de alta impedancia).
+
+Ejemplo de *__casez__*
+
+````Verilog
+module casez_example;
+    reg [3:0] in;
+    reg out;
+
+    always @(in) begin
+        casez (in)
+            4'b10?1: out = 1;  // Coincide con 4'b1001 o 4'b1011
+            4'b01z1: out = 0;  // Coincide con 4'b0101 o 4'b0111
+            default: out = 1'bx; // Desconocido
+        endcase
+    end
+endmodule
+````
+En el primer caso (4'b10?1), el ? indica que el tercer bit de in puede ser 0 o 1, por lo que esta cláusula coincidirá tanto con 4'b1001 como con 4'b1011.
+En el segundo caso (4'b01z1), el z en el tercer bit se trata como un "don't care", por lo que coincidirá con 4'b0101 o 4'b0111, sin importar si el tercer bit es 0, 1, o z.
+
+Ejemplo de *__casex__*
+
+```Verilog
+module casex_example;
+    reg [3:0] in;
+    reg out;
+
+    always @(in) begin
+        casex (in)
+            4'b1xx1: out = 1;  // Coincide con 4'b1001, 4'b1011, 4'b1101, 4'b1111, 4'b1zx1, 4'b1xz1, 4'b1zz1
+            4'b01z1: out = 0;  // Coincide con 4'b0101, 4'b0111, 4'b01x1, 4'b01z1
+            default: out = 1'bx; // Desconocido
+        endcase
+    end
+endmodule
+````
+
+En el primer caso (4'b1xx1), los dos bits centrales (xx) se consideran indiferentes ("don't care"), por lo que esta cláusula coincidirá con cualquier valor donde el primer bit sea 1, el último bit sea 1, y los dos bits centrales pueden ser 0, 1, x, o z.
+En el segundo caso (4'b01z1), el z en el tercer bit también se considera indiferente, por lo que coincidirá con valores donde el primer bit es 0, el segundo es 1, el tercero puede ser 0, 1, x, o z, y el último bit es 1.
+
+*__Evitar Latches__*
+Un latch es un dispositivo de almacenamiento que guarda un valor sin el uso de un reloj. Para evitarlos el diseñador debe tener algunos cuidados respecto al uso de *__IF__* y el *__CASE__*. En el primero siempre hay que incluir un *__else__*, así como también asignar valores a todos las variables o bien asignarselos fuera del bloque condicional. En el segundo caso se deben especificar todas las condiciones posibles de la variable, también asignarles valores a todas las variables dentro, de no ser así, hay que incluir un default y asignar valores predeterminados.
+
+*__Loops__*
+
+Realmente no hay mucho para decir, son muy similares a otros lenguajes.
+
+Se utilizan para ejecutar un bloque de sentencias múltiples veces.
+– for: Es sintetizable y el más comúnmente usado en RTL.
+– while: Es sintetizable pero no se recomienda su uso en RTL.
+– repeat: Es sintetizable pero no se recomienda su uso en RTL.
+– forever: No es sintetizable, sólo se usa en simulaciones.
+
+```Verilog
+integer ii ;
+reg [ 7 : 0 ] op ;
+
+always @(posedge i_clock ) begin
+  if ( load_en ) begin
+    op <= load_val ;
+  end
+  else begin
+    for ( ii =0; ii <7; ii = ii+1) begin
+      op [ ii +1] <= op [ ii ] ;
+    end
+    op [ 0 ] <= op [ 7 ] ;
+  end
+end
+````
+
+*__Control de simulaciones__*
+
+Son diferentes funciones para controlar diferentes aspectos de la simulación. Entre ellas podemos encontrar:
+
+– *__$finish__*: Sale de la simulación.
+– *__$stop__*: Detiene la simulación, que luego puede ser retomada desde el punto de suspensión.
+– *__$display__*: Imprime una salida.
+– *__$monitor__*: Es similar a $display pero está activo todo el tiempo. Solo puede ejecutarse un $monitor a la
+vez en toda la simulación.
+– *__$fmonitor,$fdisplay__*: Escriben los valores en archivos, que deben ser abiertos previamente con la función
+$fopen.
+– *__$readmemb,$readmemh__*: Permiten la carga de datos desde archivos en formato binario o hexadecimal a
+memorias.
+– *__‘define__*: Define una macro, que consiste en la sustitución de una o varias lineas de texto por un nombre.
+Se suele usar para definir constantes.
+– *__‘ifdef - ‘else - ‘endif__*: Condicional pre-compilación.
+– *__‘include__*: Permite insertar el contenido de un archivo fuente en otro archivo durante la compilación en el
+lugar donde se define el comando. La compilación continúa como si el contenido del archivo fuente incluido
+apareciera en lugar del comando ‘include. Se suele usar para incluir definiciones y tareas de uso común,
+evitando código repetido dentro de los módulos. 
+
+*__Generate__*
+
+Se puede usar opara crear múltiples instancias de módulos y código, o instanciar modulos y definir código condicionalmente.
+
+- Se definen dentro de un módulo, usando las palabras clave *__generate__* y *__endgenerate__*.
+- Pueden contener instancias de módsulos, declaraciones de asignación, bloques procedurales, etc.
+- NO pueden contener declaraciones de puertos ni parámetros.
+- Pueden ser anidados
+- Generalmente se usa *__Generate loop__* y *__generate condicional__*
+
+Ejemplos
+
+````Verilog
+// Ejemplo de generate loop que permite replicar asignaciones N veces
+module adder
+    #(parameter N = 4)
+    (
+        input  [N-1:0] a, b,
+        output [N-1:0] sum, cout
+    );
+
+    genvar i;
+
+    generate
+        for (i = 0; i < N; i = i + 1)
+        begin : ha_instances // Nombrarlos es una buena práctica
+            ha u_ha (
+                .a(a[i]),
+                .b(b[i]),
+                .sum(sum[i]),
+                .cout(cout[i])
+            );
+        end
+    endgenerate
+
+endmodule
+
+// Half-adder
+module ha (
+    input  a, b,
+    output sum, cout
+);
+    assign sum  = a ^ b;
+    assign cout = a & b;
+endmodule
+````
+
+*__Tareas__*
+
+- Se puede utilizar para codificar una funcionalidad que se repite varias veces en un módulo.
+- Tiene entradas, salidas y puede tener sus variables locales.
+- Todas las variables definidas en el módulo también son accesibles en la tarea.
+- Debe definirse en el mismo módulo utilizando palabras claves *__task__* y *__endtask__*. Se puede llamar desde varios
+módulos siempre y cuando esté definida en un archivo aparte que se incluye utilizando la palabra clave *__’include__*
+dentro de cada módulo.
+- Se llaman desde bloques initial o always o desde otras tareas en un módulo.
+- Pueden contener declaraciones de tiempo (#,@).
+- Pueden usar y/o asignar valores a cualquier señal declarada como global.
+- Importa el orden de los puertos de entrada y salida al momento de llamar una tarea.
+- Pueden utilizarse para modelar lógica combinacional o secuencial.
+
+*__Funciones__*
+- Similar a una tarea, ya que también implementa código que se puede llamar varias veces dentro de un módulo.
+- Se define en el módulo usando las palabras clave *__function__* y *__endfunction.__*
+- 4Sólo puede calcular una salida, debiendo tener al menos una entrada.
+- La salida debe asignarse a una variable implícita que lleve el nombre y el alcance de la función.
+- No puede utilizar construcciones de tiempo (#,@).
+- Puede ser llamada desde un bloque de procedimiento o una declaración de asignación continua.
+- Puede llamarse desde otras funciones y tareas, mientras que una función no puede llamar a una tarea.
+- Sólo pueden utilizarse para modelar lógica combinacional (no soportan asignaciones no bloqueantes).
+
+Ejemplo
+````Verilog
+module MUX4to1 (
+    output out,
+    input  [3:0] in,
+    input  [1:0] sel
+);
+    wire out1, out2;
+
+    function MUX2to1;
+        input in1, in2;
+        input select;
+        assign MUX2to1 = (select) ? in2 : in1;
+    endfunction // MUX2to1
+
+    assign out1 = MUX2to1(in[0], in[1], sel[0]);
+    assign out2 = MUX2to1(in[2], in[3], sel[0]);
+    assign out  = MUX2to1(out1, out2, sel[1]);
+
+endmodule
+
+module testFunction;
+    reg [3:0] IN;
+    reg [1:0] SEL;
+    wire OUT;
+
+    MUX4to1 mux(.out(OUT), .in(IN), .sel(SEL));
+
+    initial begin
+        IN = 1; SEL = 0;
+        #5 IN = 7; SEL = 0;
+        #5 IN = 2; SEL = 1;
+        #5 IN = 4; SEL = 2;
+        #5 IN = 8; SEL = 3;
+    end
+
+    initial
+        $monitor($time, " IN=%b SEL=%b OUT=%b\n", IN, SEL, OUT);
+
+endmodule
+````
+
 ### Nivel de Transferencia de Registros ( RTL )
 
 Describe el flujo de datos y las operaciones en registros bajo el control de un reloj, especifica cómo se mueven los datos entre los registros y las operaciones realizadas sobre ellos. Se suelen utilizar expresiones, operandos y operadores. Dependiendo del dispositivo en el que estamos se implementan de forma diferente, en nuestro caso, en la *__FPGA__* se detecta cuándo en el código *__RTL__* hay operaciones aritméticas y se asignan automaticamente a los bloques *__DPS__*.

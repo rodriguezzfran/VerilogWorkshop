@@ -11,7 +11,7 @@ Cómo se mencionó anteriormente en la rama `main` vamos a tratar de ejemplifica
 Algunas cosas a tener en cuenta son:
 
 - Los nombres en rojo son puertos
-- *__VIO__* y *__ILA__* son submódulos.
+- *__VIO__* y *__ILA__* son submódulos.https://github.com/rodriguezzfran/VerilogWorkshop/blob/Leds/README.md
 - *__i_reset__* es el reset del sistema, pone al cero el contador e inicializa el shift register.
 - *__i_sw[0]__* controla el enable del contador. si está en 0 detiene el funcionamiento sin alterar el estado actual del contador y del SR.
 - El SR se desplaza cuándo el contador llegó a algún límite *__R0-R3__*.
@@ -21,4 +21,4 @@ Algunas cosas a tener en cuenta son:
 
 Que es entonces lo que vamos a hacer?
 
-##
+

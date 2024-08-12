@@ -46,6 +46,82 @@ Por lo que con 16 taps el número máximo de la secuencia es *__65536__* y para 
 </div>
 <br>
 
+Luego, el código en Verilog que proporciona el programa es el siguiente
+
+
+```Verilog
+module LFSR16_1002D(
+  input clk,
+  output reg [15:0] LFSR = 65535
+);
+
+wire feedback = LFSR[15];
+
+always @(posedge clk)
+begin
+  LFSR[0] <= feedback;
+  LFSR[1] <= LFSR[0];
+  LFSR[2] <= LFSR[1] ^ feedback;
+  LFSR[3] <= LFSR[2] ^ feedback;
+  LFSR[4] <= LFSR[3];
+  LFSR[5] <= LFSR[4] ^ feedback;
+  LFSR[6] <= LFSR[5];
+  LFSR[7] <= LFSR[6];
+  LFSR[8] <= LFSR[7];
+  LFSR[9] <= LFSR[8];
+  LFSR[10] <= LFSR[9];
+  LFSR[11] <= LFSR[10];
+  LFSR[12] <= LFSR[11];
+  LFSR[13] <= LFSR[12];
+  LFSR[14] <= LFSR[13];
+  LFSR[15] <= LFSR[14];
+end
+endmodule
+```
+Con las correcciones solicitadas queda de la siguiente manera
+
+```Verilog
+module LFSR16_1002D(
+  input clk, // Señal de clock que controla el desplazamiento del registro
+  input [15:0] i_seed, // Entrada para la semilla del registro
+  input i_valid, // Entrada para habilitar la nueva secuencia de bits
+  input i_rst // Reset asincrónico para cargar la seed de forma asincrónica
+  input i_soft_rst, // Reset sincrónico para cargar la seed de forma sincrónica
+  output reg [15:0] LFSR // Registro de desplazamiento de 16 bits
+);
+
+wire feedback = LFSR[15]; // Señal de feedback que se obtiene del bit más significativo del registro, determina el resto.
+
+always @(posedge clk or posedge i_rst) begin // Si hay un flanco de subida en el reloj o en el reset asincrónico se ejecuta el bloque
+    if (i_rst) begin// Si el reset asincrónico está activo
+        LFSR <= i_seed; // Se carga la semilla en el registro
+    end else if(i_soft_rst) begin // Si el reset sincrónico está activo
+    LFSR <= i_seed; // Se carga la semilla en el registro
+    end else if(i_valid) begin // Si la señal de validación está activa
+        LFSR[0] <= feedback;
+        LFSR[1] <= LFSR[0];
+        LFSR[2] <= LFSR[1] ^ feedback; // Se hace un XOR entre el bit 1 y el feedback
+        LFSR[3] <= LFSR[2] ^ feedback; // Se hace un XOR entre el bit 2 y el feedback
+        LFSR[4] <= LFSR[3];
+        LFSR[5] <= LFSR[4] ^ feedback; // Se hace un XOR entre el bit 4 y el feedback
+        LFSR[6] <= LFSR[5];
+        LFSR[7] <= LFSR[6];
+        LFSR[8] <= LFSR[7];
+        LFSR[9] <= LFSR[8];
+        LFSR[10] <= LFSR[9];
+        LFSR[11] <= LFSR[10];
+        LFSR[12] <= LFSR[11];
+        LFSR[13] <= LFSR[12];
+        LFSR[14] <= LFSR[13];
+        LFSR[15] <= LFSR[14];
+    end
+end
+
+endmodule
+```
+
+# Activad 2
+
 
 
 

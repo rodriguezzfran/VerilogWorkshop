@@ -38,7 +38,7 @@ Según lo investigado, para poder obtener la máxima secuencia debemos
 - Puertas XOR
 - Número inicial que no sean todos los bits iguales a 0.
 
-Por lo que con 16 taps el número máximo de la secuencia es *__65536__* y para lograrlo los tpas deben ir en el *__2__*,*__3__* y *__5__*.
+Por lo que con 16 taps el número máximo de la secuencia es *__65536__* y para lograrlo los taps deben ir en el *__2__*,*__3__* y *__5__*.
 
 <br>
 <div align="center">

@@ -122,6 +122,53 @@ endmodule
 
 # Activad 2
 
+Luego de haber generado el código se pide una verificación mediante *__testbench__* que cumpla las siguientes consignas:
+
+- Se utilice un clock con velocidad de 10MHz.
+
+- Se realice un reset, en donde el tiempo en el que se esté
+reseteando el módulo no debe ser un valor menor a 1us ni
+mayor a 250us.
+
+- Se genere una señal de valid, en donde aleatoriamente su
+valor cambie o no en cada ciclo de clock.
+
+- Se deberá crear task en donde se cambie el valor del
+puerto de entrada i_seed.
+
+- Se deberá crear dos tasks:
+  - Una que seteara por un tiempo random el reset
+asincrónico.
+  -  Otra que hará lo mismo con el reset sincrónico.
+ 
+Para hacer el testbench entonces comenzamos instanciando el módulo anterior
+
+```Verilog
+module tb_LFSR16_1002D;
+
+reg clk; // Señal de clock que controla el desplazamiento del registro
+reg [15:0] i_seed; // Entrada para la semilla del registro
+reg i_valid; // Señal de validación
+reg i_rst; // Reset asincrónico para cargar la seed de forma asincrónica
+reg i_soft_rst; // Reset sincrónico para cargar la seed de forma sincrónica
+wire [15:0] LFSR; // Registro de desplazamiento de 16 bits
+
+// Instanciación del módulo LFSR16_1002D
+LFSR16_1002D LFSR (
+    .clk(clk), // asignación de la señal de clock del módulo tb_LFSR16_1002D a la señal de clock del testbench
+    .i_seed(i_seed),
+    .i_valid(i_valid),
+    .i_rst(i_rst),
+    .i_soft_rst(i_soft_rst),
+    .LFSR(LFSR)
+);
+```
+
+
+
+
+
+
 
 
 

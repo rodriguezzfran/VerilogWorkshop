@@ -144,6 +144,8 @@ asincrónico.
 Para hacer el testbench entonces comenzamos instanciando el módulo anterior
 
 ```Verilog
+`timescale 1ns/1ps // Definición de la escala de tiempo en nanosegundos y precisión en picosegundos
+
 module tb_LFSR16_1002D;
 
 reg clk; // Señal de clock que controla el desplazamiento del registro
@@ -163,6 +165,94 @@ LFSR16_1002D LFSR (
     .LFSR(LFSR)
 );
 ```
+
+Ahora debemos generar la señal del clock de 10MHZ
+
+```Verilog
+// Generación de la señal de clock con una velocidad de 10MHz
+// Como la fórmla para calcular el periodo de un reloj es T = 1/f, donde f es la frecuencia del reloj, entonces
+// T = 1/10E6 = 100ns
+initial begin
+    clk = 0;
+    forever #50 clk = ~clk; // genera un bucle infinito que cambia el valor de la señal de clock cada 50ns
+end
+```
+Para la parte de cambiar el valor de valid de forma aleatoria se implementa usando un bloque *__always__*, así, cada vez que haya un cambio en el clock, este cambiará su valor o no
+
+```Verilog
+// Generación de la señal de validación i_valid de forma aleatoria en cada flanco de subida del reloj
+always @(posedge clk) begin
+    i_valid = $random % 2; // genera un número aleatorio entre 0 y 1
+end
+```
+La task para cambiar el valor de la seed se implementa de la siguiente forma, usando un retardo de 100ns paraa estabilizar el sistema
+
+```Verilog
+// task para cambiar el valor de i_seed 
+task set_seed(input [15:0] new_seed);
+    begin
+        i_seed = new_seed;
+    end
+endtask
+```
+Las task para los reset se implementan de la siguiente manera, suponiendo que el tiempo de reset mencionado era para los 2 reset
+```Verilog
+//tasks para cambiar el valor de i_rst y el de i_soft_rst
+task set_rst;
+    begin
+        i_rst = 1;
+        // Espero un tiempo random entre 1us y 250us
+        #($random % 250 + 1);
+        i_soft_rst = 0;
+    end
+endtask
+
+task set_soft_rst;
+    begin
+        i_soft_rst = 1;
+        // Espero un tiempo random entre 1us y 250us
+        #($random % 250 + 1);
+        i_rst = 0;
+    end
+endtask
+```
+Finalmente, usamos los estímulos
+
+```Verilog
+// Inicialización de la prueba
+initial begin
+
+    // Inicialización de las señales
+    i_valid = 0;
+    i_rst = 0;
+    i_soft_rst = 0;
+    i_seed = 16'hFFFF; // Semilla inicial
+
+    // reset asincrónico
+    set_rst;
+
+    // si i_valid está en 1, se cambia la semilla aleatoriamente
+    if(i_valid) begin
+        set_seed($random);
+        set_soft_rst; // reset sincrónico para cargar la nueva semilla
+    end
+
+    // finalización de la simulación
+    $finish;
+end
+
+endmodule
+```
+
+
+
+
+
+
+
+
+
+
 
 
 

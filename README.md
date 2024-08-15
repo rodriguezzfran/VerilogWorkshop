@@ -626,6 +626,9 @@ module testFunction;
 
 endmodule
 ````
+*__Set Up Hoold__*
+
+Al usar lógica combinacional hay que tener en cuenta que los flip flops tienen un tiempo al usar asignación bloqueante y necesitamos que ciertos valores se estabilicen antes de guardarlos en los registros. Si yo tengo mucho combinacional el delay puede provocar resultados inesperados debido a que el guardado en el registro es muy sobre la llegada del flanco del reloj.
 
 ### Nivel de Transferencia de Registros ( RTL )
 

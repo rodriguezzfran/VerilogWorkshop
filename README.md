@@ -162,20 +162,20 @@ Para hacer el testbench entonces comenzamos instanciando el módulo anterior
 module tb_LFSR16_1002D;
 
 reg clk; // Señal de clock que controla el desplazamiento del registro
-reg [15:0] i_seed; // Entrada para la semilla del registro
 reg i_valid; // Señal de validación
 reg i_rst; // Reset asincrónico para cargar la seed de forma asincrónica
 reg i_soft_rst; // Reset sincrónico para cargar la seed de forma sincrónica
-wire [15:0] LFSR; // Registro de desplazamiento de 16 bits
+reg [15:0] i_seed; // Entrada para la semilla del registro
+wire [15:0] o_LFSR; // Registro de desplazamiento de 16 bits
 
 // Instanciación del módulo LFSR16_1002D
-LFSR16_1002D LFSR (
+LFSR16_1002D lfsrmod (
     .clk(clk), // asignación de la señal de clock del módulo tb_LFSR16_1002D a la señal de clock del testbench
-    .i_seed(i_seed),
     .i_valid(i_valid),
     .i_rst(i_rst),
     .i_soft_rst(i_soft_rst),
-    .LFSR(LFSR)
+    .i_seed(i_seed),
+    .o_LFSR(LFSR)
 );
 ```
 
@@ -188,14 +188,6 @@ Ahora debemos generar la señal del clock de 10MHZ
 initial begin
     clk = 0;
     forever #50 clk = ~clk; // genera un bucle infinito que cambia el valor de la señal de clock cada 50ns
-end
-```
-Para la parte de cambiar el valor de valid de forma aleatoria se implementa usando un bloque *__always__*, así, cada vez que haya un cambio en el clock, este cambiará su valor o no
-
-```Verilog
-// Generación de la señal de validación i_valid de forma aleatoria en cada flanco de subida del reloj
-always @(posedge clk) begin
-    i_valid = $random % 2; // genera un número aleatorio entre 0 y 1
 end
 ```
 La task para cambiar el valor de la seed se implementa de la siguiente forma, usando un retardo de 100ns paraa estabilizar el sistema
@@ -244,13 +236,19 @@ initial begin
     // reset asincrónico
     set_rst;
 
-    // si i_valid está en 1, se cambia la semilla aleatoriamente
-    if(i_valid) begin
-        set_seed($random);
-        set_soft_rst; // reset sincrónico para cargar la nueva semilla
+    // genero el valid
+    repeat(255)
+    begin
+        @(posedge clk);
+        i_valid = $random % 2;
+        if(i_valid)
+        begin
+            set_seed($random);
+            set_soft_rst;
+        end
     end
 
-    // finalización de la simulación
+    // Finalizo la simulación
     $finish;
 end
 

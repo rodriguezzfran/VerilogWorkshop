@@ -255,6 +255,194 @@ end
 endmodule
 ```
 
+# Activad 3  
+
+Para la actividad 3 se pide crear test que cumplan con las siguientes consignas
+
+- Chequear la periodicidad del generador.
+- CHequear la periodicidad del generador con diferentes seeds random
+
+Para la primera tarea se diseño el siguiente test
+
+```verilog
+`timescale 1ns/1ps
+
+module tb2_LFSR16_1002D;
+
+    reg clk;
+    reg i_valid;
+    reg i_rst;
+    reg i_soft_rst;
+    reg [15:0] i_seed;
+    wire [15:0] o_LFSR;
+
+    // Instanciación del módulo LFSR16_1002D
+    LFSR16_1002D lfsrmod (
+        .clk(clk),
+        .i_valid(i_valid),
+        .i_rst(i_rst),
+        .i_soft_rst(i_soft_rst),
+        .i_seed(i_seed),
+        .o_LFSR(o_LFSR)
+    );
+
+    // Generación de la señal de clock con una velocidad de 10MHz
+    initial begin
+        clk = 0;
+        forever #50 clk = ~clk;
+    end
+
+    // registros necesarios para la prueba
+
+    integer i;
+    reg [15:0] initial_value;
+    reg [15:0] current_value;
+    reg [15:0] count;
+
+    // Inicialización de la prueba
+    initial begin
+        // Inicialización de las señales
+        i_valid = 1;
+        i_rst = 0;
+        i_soft_rst = 0;
+        i_seed = 16'h1;
+
+        // Cargar la semilla en seed con el soft reset
+        @(posedge clk);
+        i_soft_rst = 1;
+        @(posedge clk);
+        i_soft_rst = 0;
+
+        // Cargar la semilla LFSR con el reset asincrónico
+        @(posedge clk);
+        i_rst = 1;
+        @(posedge clk);
+        i_rst = 0;
+
+        // obtener el valor inicial del LFSR
+        @(posedge clk);
+        initial_value = o_LFSR;
+        current_value = initial_value;
+        count = 0;
+
+        // repetir hasta que la secuencia se repita
+        while( current_value != initial_value || count == 0 ) begin
+            @(posedge clk);
+            current_value = o_LFSR;
+            count = count + 1;
+        end
+
+        $display("La secuencia se repite después de %d ciclos", count);
+
+        // Finalizar la simulación
+        $finish;
+    end
+
+endmodule
+````
+
+mientras que para el segundo test
+
+`timescale 1ns/1ps
+
+module tb2_LFSR16_1002D;
+
+    reg clk;
+    reg i_valid;
+    reg i_rst;
+    reg i_soft_rst;
+    reg [15:0] i_seed;
+    wire [15:0] o_LFSR;
+
+    // Instanciación del módulo LFSR16_1002D
+    LFSR16_1002D lfsrmod (
+        .clk(clk),
+        .i_valid(i_valid),
+        .i_rst(i_rst),
+        .i_soft_rst(i_soft_rst),
+        .i_seed(i_seed),
+        .o_LFSR(o_LFSR)
+    );
+
+    // Generación de la señal de clock con una velocidad de 10MHz
+    initial begin
+        clk = 0;
+        forever #50 clk = ~clk;
+    end
+
+    // registros necesarios para la prueba
+
+    integer i;
+    reg [15:0] initial_value;
+    reg [15:0] current_value;
+    reg [15:0] count;
+    intenger num_test = 5; // Número de pruebas a realizar con diferentes semillas
+
+    // cargar la semilla y medir el periodo
+    task measure_periodicity;
+        input [15:0] seed_value;
+        output [15:0] period;
+        begin
+            //cargar la semilla 
+            i_seed = seed_value;
+
+            @(posedge clk);
+            i_soft_rst = 1;
+            @(posedge clk);
+            i_soft_rst = 0;
+
+            // Cargar la semilla LFSR con el reset asincrónico
+            @(posedge clk);
+            i_rst = 1;
+            @(posedge clk);
+            i_rst = 0;
+
+            // obtener el valor inicial del LFSR
+            @(posedge clk);
+            initial_value = o_LFSR;
+            current_value = initial_value;
+            period = 0;
+
+            // repetir hasta que el valor actual sea igual al valor inicial
+            while(current_value != initial_value || period == 0) begin
+                @(posedge clk);
+                current_value = o_LFSR;
+                period = period + 1;
+            end
+        end
+    endtask
+
+    // Inicialización de la prueba
+    initial begin
+        // Inicialización de las señales
+        i_valid = 1;
+        i_rst = 0;
+        i_soft_rst = 0;
+
+        // probar con diferentes semillas
+        for(i = 0; i < num_test; i = i + 1) begin
+            
+            // generar una semilla aleatoria
+            i_seed = $random;
+
+            // medir el periodo de la secuencia
+            measure_periodicity(i_seed, count);
+
+            // imprimir el resultado
+            $display("Seed: %h, Period: %d", i_seed, count);
+        end
+
+        // Finalizar la simulación
+        $finish;
+    end
+
+endmodule
+
+
+
+
+
+
 
 
 

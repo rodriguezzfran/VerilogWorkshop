@@ -38,11 +38,11 @@ Según lo investigado, para poder obtener la máxima secuencia debemos
 - Puertas XOR
 - Número inicial que no sean todos los bits iguales a 0.
 
-Por lo que con 16 taps el número máximo de la secuencia es *__65536__* y para lograrlo los taps deben ir en el *__2__*,*__3__* y *__5__*.
+Por lo que con 16 taps el número máximo de la secuencia es *__255__* y para lograrlo los taps deben ir en el *__2__*,*__3__* y *__4__*.
 
 <br>
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/fab6f984-bc54-44f2-b593-3af9ad95b5de" alt="RGB Diagram" style="box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);">
+  <img src="https://github.com/user-attachments/assets/a9e1ab76-9441-497d-9e4e-67f6f055d970" alt="RGB Diagram" style="box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);">
 </div>
 <br>
 
@@ -50,12 +50,12 @@ Luego, el código en Verilog que proporciona el programa es el siguiente
 
 
 ```Verilog
-module LFSR16_1002D(
+module LFSR8_11D(
   input clk,
-  output reg [15:0] LFSR = 65535
+  output reg [7:0] LFSR = 255
 );
 
-wire feedback = LFSR[15];
+wire feedback = LFSR[7];
 
 always @(posedge clk)
 begin
@@ -63,74 +63,52 @@ begin
   LFSR[1] <= LFSR[0];
   LFSR[2] <= LFSR[1] ^ feedback;
   LFSR[3] <= LFSR[2] ^ feedback;
-  LFSR[4] <= LFSR[3];
-  LFSR[5] <= LFSR[4] ^ feedback;
+  LFSR[4] <= LFSR[3] ^ feedback;
+  LFSR[5] <= LFSR[4];
   LFSR[6] <= LFSR[5];
   LFSR[7] <= LFSR[6];
-  LFSR[8] <= LFSR[7];
-  LFSR[9] <= LFSR[8];
-  LFSR[10] <= LFSR[9];
-  LFSR[11] <= LFSR[10];
-  LFSR[12] <= LFSR[11];
-  LFSR[13] <= LFSR[12];
-  LFSR[14] <= LFSR[13];
-  LFSR[15] <= LFSR[14];
 end
 endmodule
+
 ```
 Con las correcciones solicitadas queda de la siguiente manera
 
 ```Verilog
 module LFSR16_1002D(
-  input wire clk, // Señal de clock que controla el desplazamiento del registro
-  input wire i_valid, // Entrada para habilitar la nueva secuencia de bits
-  input wire i_rst, // Reset asincrónico para cargar la seed de forma asincrónica
-  input wire i_soft_rst, // Reset sincrónico para cargar la seed de forma sincrónica
-  input wire [15:0] i_seed, // Entrada para la semilla del registro
-  output reg [15:0] o_LFSR = 255// Registro de desplazamiento de 16 bits
+  input wire clk,
+  input wire i_valid, // signal to indicate that we can genereate a new bit secuence 
+  input wire [7:0 ] i_seed, // new initial seed
+  input wire i_rst, // reset signal
+  input wire i_soft_reset, // soft reset signal
+
+  output reg [7:0] LFSR
 );
 
-wire feedback = LFSR[15]; // Señal de feedback que se obtiene del bit más significativo del registro, determina el resto.
-reg [15:0] LFSR; // Registro de desplazamiento de 16 bits
-reg [15:0] seed; // Registro de la semilla
+wire feedback = LFSR[7] ^ (LFSR[6:0]==7'b0000000);
 
-always @(posedge clk or posedge i_rst) // Si hay un flanco de subida en el reloj o en el reset asincrónico se ejecuta el bloque
-begin 
-    if (i_rst) begin// Si el reset asincrónico está activo
-        LFSR <= seed; // Se fija la semilla en el registro
-    end else if(i_soft_rst) // Si el reset sincrónico está activo 
-    begin 
-        seed <= i_seed; // Se carga el valor de i_seed en el registro de la semilla para luego ser fijado
-    end else if(i_valid) 
-    begin // Si la señal de validación está activa
-        LFSR[0] <= feedback;
-        LFSR[1] <= LFSR[0];
-        LFSR[2] <= LFSR[1] ^ feedback; // Se hace un XOR entre el bit 1 y el feedback
-        LFSR[3] <= LFSR[2] ^ feedback; // Se hace un XOR entre el bit 2 y el feedback
-        LFSR[4] <= LFSR[3];
-        LFSR[5] <= LFSR[4] ^ feedback; // Se hace un XOR entre el bit 4 y el feedback
-        LFSR[6] <= LFSR[5];
-        LFSR[7] <= LFSR[6];
-        LFSR[8] <= LFSR[7];
-        LFSR[9] <= LFSR[8];
-        LFSR[10] <= LFSR[9];
-        LFSR[11] <= LFSR[10];
-        LFSR[12] <= LFSR[11];
-        LFSR[13] <= LFSR[12];
-        LFSR[14] <= LFSR[13];
-        LFSR[15] <= LFSR[14];
-    end
+parameter seed = 8'b00000001 ;
+
+// inside the always block the i_rst has the priority over the i_soft_reset and the other blocks are secuentual
+always @(posedge clk or posedge i_rst) begin // i_rst is for an eventual hard reset of the system
+  if(i_rst) begin
+    LFSR <= seed;
+  end
+  else if(i_soft_reset) begin
+    LFSR <= i_seed;
+  end
+  else if (i_valid) begin
+    LFSR[0] <= feedback;
+    LFSR[1] <= LFSR[0];
+    LFSR[2] <= LFSR[1] ^ feedback;
+    LFSR[3] <= LFSR[2] ^ feedback;
+    LFSR[4] <= LFSR[3] ^ feedback;
+    LFSR[5] <= LFSR[4];
+    LFSR[6] <= LFSR[5];
+    LFSR[7] <= LFSR[6];
+  end
 end
-
-always @(posedge clk) // Si hay un flanco de subida en el reloj se ejecuta el bloque
-begin
-    if (i_valid) // Si la señal de validación está activa
-    begin
-        o_LFSR <= LFSR; // Se fija el valor del registro en la salida
-    end
-end
-
 endmodule
+
 ```
 
 # Activad 2
@@ -157,101 +135,142 @@ asincrónico.
 Para hacer el testbench entonces comenzamos instanciando el módulo anterior
 
 ```Verilog
-`timescale 1ns/1ps // Definición de la escala de tiempo en nanosegundos y precisión en picosegundos
+`timescale 1ns / 1ps // the first number is the time unit, the second is the time precision
 
-module tb_LFSR16_1002D;
+module tb_lfsr;
 
-reg clk; // Señal de clock que controla el desplazamiento del registro
-reg i_valid; // Señal de validación
-reg i_rst; // Reset asincrónico para cargar la seed de forma asincrónica
-reg i_soft_rst; // Reset sincrónico para cargar la seed de forma sincrónica
-reg [15:0] i_seed; // Entrada para la semilla del registro
-wire [15:0] o_LFSR; // Registro de desplazamiento de 16 bits
+// now the inputs and outputs are regs 'cause now these have values
+reg clk;
+reg i_valid;
+reg i_rst;
+reg i_soft_reset;
+reg [7:0] i_seed;
 
-// Instanciación del módulo LFSR16_1002D
-LFSR16_1002D lfsrmod (
-    .clk(clk), // asignación de la señal de clock del módulo tb_LFSR16_1002D a la señal de clock del testbench
-    .i_valid(i_valid),
-    .i_rst(i_rst),
-    .i_soft_rst(i_soft_rst),
-    .i_seed(i_seed),
-    .o_LFSR(LFSR)
+// the output is a wire 'cause it's a signal that we can't change
+wire  [7:0] LFSR;
+
+// the module that we want to test
+LFSR16_1002D lfsr(
+  .clk(clk),
+  .i_valid(i_valid),
+  .i_rst(i_rst),
+  .i_soft_reset(i_soft_reset),
+  .i_seed(i_seed),
+  .LFSR(LFSR)
 );
 ```
 
 Ahora debemos generar la señal del clock de 10MHZ
 
 ```Verilog
-// Generación de la señal de clock con una velocidad de 10MHz
-// Como la fórmla para calcular el periodo de un reloj es T = 1/f, donde f es la frecuencia del reloj, entonces
-// T = 1/10E6 = 100ns
+// the clock signal, it has to be a 10MHz signal so 1/10MHz = 100ns
+// So it has to be 50ns high and 50ns low
 initial begin
-    clk = 0;
-    forever #50 clk = ~clk; // genera un bucle infinito que cambia el valor de la señal de clock cada 50ns
+  clk = 0;
+  forever #50 clk = ~clk;
 end
 ```
 La task para cambiar el valor de la seed se implementa de la siguiente forma, usando un retardo de 100ns paraa estabilizar el sistema
 
 ```Verilog
-// task para cambiar el valor de i_seed 
-task set_seed(input [15:0] new_seed);
-    begin
-        i_seed = new_seed;
-    end
+// task to change the value of i_seed
+task change_seed;
+  input [7:0] new_seed; // vivado let us to choose the new seed
+  begin
+    @(posedge clk); // wait for the next rising edge
+    i_seed = new_seed;
+    i_soft_reset = 1;
+    @(posedge clk); // wait for the next rising edge
+    i_soft_reset = 0;
+  end
 endtask
 ```
 Las task para los reset se implementan de la siguiente manera, suponiendo que el tiempo de reset mencionado era para los 2 reset
 ```Verilog
-//tasks para cambiar el valor de i_rst y el de i_soft_rst
-task set_rst;
-    begin
-        i_rst = 1;
-        // Espero un tiempo random entre 1us y 250us
-        #($random % 250 + 1);
-        i_soft_rst = 0;
-    end
+// task to stay in the asincronous reset state for a random time between 1 and 250 us
+task async_reset;
+  integer async_delay;
+  begin
+    async_delay = (($urandom % 250) + 1) * 1000; // random time between 1 and 250 us
+    i_rst = 1;
+    #(async_delay);
+    @(posedge clk);
+    i_rst = 0;
+  end
 endtask
 
-task set_soft_rst;
-    begin
-        i_soft_rst = 1;
-        // Espero un tiempo random entre 1us y 250us
-        #($random % 250 + 1);
-        i_rst = 0;
-    end
+// task to generate a syncronous reset
+task sync_reset;
+  integer sync_delay;
+  begin
+    sync_delay = (($urandom % 250) + 1) * 1000; // random time between 1 and 250 us
+    i_soft_reset = 1;
+    #(sync_delay);
+    @(posedge clk);
+    i_soft_reset = 0;
+  end
 endtask
 ```
 Finalmente, usamos los estímulos
 
 ```Verilog
-// Inicialización de la prueba
+// start of the test
 initial begin
+  
+  $display("Start of the simulation");
+  // take the system to a know state
+  i_rst = 0;
+  i_soft_reset = 0;
+  i_valid = 0;
+  i_seed = 8'b10101010;
 
-    // Inicialización de las señales
-    i_valid = 0;
-    i_rst = 0;
-    i_soft_rst = 0;
-    i_seed = 16'hFFFF; // Semilla inicial
+  // wait for the system to stabilize and make a reset
+  #100;
+  i_rst = 1;
+  #100; 
+  i_rst = 0;
 
-    // reset asincrónico
-    set_rst;
-
-    // genero el valid
-    repeat(255)
-    begin
-        @(posedge clk);
-        i_valid = $random % 2;
-        if(i_valid)
-        begin
-            set_seed($random);
-            set_soft_rst;
-        end
-    end
-
-    // Finalizo la simulación
-    $finish;
+  // now make the i_valid signal change forever for a normal test
+  forever begin
+    @(posedge clk);
+    i_valid = $urandom % 2;
+  end
 end
 
+// we divide the initial block in two because the forever block is infinite
+
+initial begin
+
+  // waits 200 microseconds
+  #200000;
+  // now we print the current value of the LFSR
+  // and trigger the async_reset task
+  $display("LFSR = %b", LFSR);
+  $display("Triggering async_reset task");
+  async_reset;
+  $display("LFSR = %b", LFSR);
+
+  // waits 200 microseconds
+  #200000;
+  // now we trigger the sync_reset task
+  $display("Triggering sync_reset task");
+  sync_reset;
+  $display("LFSR = %b", LFSR);
+
+  // waits 200 microseconds
+  #200000;
+  // now we change the seed to 8'b11111111
+  $display("Changing seed to 8'b11111111");
+  $display("Time: %t", $time);
+  change_seed(8'b11111111);
+  $display("LFSR = %b", LFSR);
+
+  //waits 200 microseconds
+  #200000;
+
+  // end of the simulation
+  $finish;
+end
 endmodule
 ```
 
@@ -262,181 +281,449 @@ Para la actividad 3 se pide crear test que cumplan con las siguientes consignas
 - Chequear la periodicidad del generador.
 - CHequear la periodicidad del generador con diferentes seeds random
 
-Para la primera tarea se diseño el siguiente test
+Para ambos test se usaron 2 task
 
 ```verilog
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 
-module tb2_LFSR16_1002D;
+module tb_perodicity;
 
-    reg clk;
-    reg i_valid;
-    reg i_rst;
-    reg i_soft_rst;
-    reg [15:0] i_seed;
-    wire [15:0] o_LFSR;
+reg clk;
+reg i_valid;
+reg i_rst;
+reg i_soft_reset;
+reg [7:0] i_seed;
 
-    // Instanciación del módulo LFSR16_1002D
-    LFSR16_1002D lfsrmod (
-        .clk(clk),
-        .i_valid(i_valid),
-        .i_rst(i_rst),
-        .i_soft_rst(i_soft_rst),
-        .i_seed(i_seed),
-        .o_LFSR(o_LFSR)
-    );
+wire  [7:0] LFSR;
 
-    // Generación de la señal de clock con una velocidad de 10MHz
-    initial begin
-        clk = 0;
-        forever #50 clk = ~clk;
-    end
+LFSR16_1002D lfsr(
+  .clk(clk),
+  .i_valid(i_valid),
+  .i_rst(i_rst),
+  .i_soft_reset(i_soft_reset),
+  .i_seed(i_seed),
+  .LFSR(LFSR)
+);
 
-    // registros necesarios para la prueba
+initial begin
+  clk = 0;
+  forever #50 clk = ~clk;
+end
 
-    integer i;
-    reg [15:0] initial_value;
-    reg [15:0] current_value;
-    reg [15:0] count;
-
-    // Inicialización de la prueba
-    initial begin
-        // Inicialización de las señales
-        i_valid = 1;
-        i_rst = 0;
-        i_soft_rst = 0;
-        i_seed = 16'h1;
-
-        // Cargar la semilla en seed con el soft reset
+task normal_periodicity;
+    integer count;
+    begin
         @(posedge clk);
-        i_soft_rst = 1;
-        @(posedge clk);
-        i_soft_rst = 0;
-
-        // Cargar la semilla LFSR con el reset asincrónico
-        @(posedge clk);
-        i_rst = 1;
-        @(posedge clk);
-        i_rst = 0;
-
-        // obtener el valor inicial del LFSR
-        @(posedge clk);
-        initial_value = o_LFSR;
-        current_value = initial_value;
         count = 0;
+        i_seed = 8'b00000001;
+        i_soft_reset = 1;
+        @(posedge clk);
+        i_soft_reset = 0;
 
-        // repetir hasta que la secuencia se repita
-        while( current_value != initial_value || count == 0 ) begin
+        //wait for the LFSR to reach the seed
+        #100
+
+        while (LFSR != i_seed) begin
             @(posedge clk);
-            current_value = o_LFSR;
             count = count + 1;
         end
-
-        $display("La secuencia se repite después de %d ciclos", count);
-
-        // Finalizar la simulación
-        $finish;
+        $display("The period is %d", count);
     end
+endtask
 
+task random_periodicity;
+    integer count;
+    input [7:0] new_seed;
+    begin
+        @(posedge clk);
+        count = 0;
+        i_seed = new_seed;
+        i_soft_reset = 1;
+        @(posedge clk);
+        i_soft_reset = 0;
+
+        //wait for the LFSR to reach the new seed
+        #100
+        while (LFSR != new_seed) begin
+            @(posedge clk);
+            count = count + 1;
+        end
+        $display("The period is %d", count);
+    end
+endtask
+
+// start of the test
+initial begin
+    $display("Start of the simulation");
+
+    // take the system to a know state
+    i_rst = 0;
+    i_soft_reset = 0;
+    i_valid = 0;
+
+    // wait for the system to stabilize
+    #100;
+
+    // now make the i_valid signal change forever for a normal test
+    forever begin
+        @(posedge clk);
+        i_valid = ~i_valid;
+    end
+end
+
+initial begin
+    
+    //waits and ejecutes the normal periodicity task
+    #20000
+    normal_periodicity;
+
+    //waits and ejecutes the random periodicity task
+    #200000
+    random_periodicity($urandom);
+
+    $finish;
+end
 endmodule
 ````
+Luego las actividades pedían la realización de un *__Checker__* que se conecte a la salida del LFSR, la idea de esto es tener una nueva señal *__o_lock__* que permita que el checker se bloquee luego de haber recibido 5 valores válidos del LFSR, en caso contrario, si recibe 3 inválidos se debloquea. Esto último se implementó con una máquina de estados.
 
-mientras que para el segundo test
+```verilog
+module checker
+(
+    input wire clock,
+    input wire rst,
+    input wire soft_rst,
+    input wire i_valid,
+    input wire [7:0] i_lfsr, // this is the LFSR generator output, now it is the input
+    output reg o_lock // this is the output for lock or unlock the LFSR
+);
 
-`timescale 1ns/1ps
+// state machine states
+localparam UNLOCK = 1'b0; // this is the unlock state
+localparam LOCK = 1'b1; // this is the lock state
 
-module tb2_LFSR16_1002D;
+// internal signals for the state machine
+reg     next_state;
+reg     state;
 
-    reg clk;
-    reg i_valid;
-    reg i_rst;
-    reg i_soft_rst;
-    reg [15:0] i_seed;
-    wire [15:0] o_LFSR;
+// internal signals for the counters
+reg [3:0] valid_counter;
+reg [3:0] valid_counter_next; 
+reg [1:0] invalid_counter;
+reg [1:0] invalid_counter_next;
 
-    // Instanciación del módulo LFSR16_1002D
-    LFSR16_1002D lfsrmod (
-        .clk(clk),
-        .i_valid(i_valid),
-        .i_rst(i_rst),
-        .i_soft_rst(i_soft_rst),
-        .i_seed(i_seed),
-        .o_LFSR(o_LFSR)
-    );
+reg       resync; // this is the resync signal
+reg [7:0] lfsr_local; // this is the local LFSR generator
+wire feedback; // this is the feedback signal
 
-    // Generación de la señal de clock con una velocidad de 10MHz
-    initial begin
-        clk = 0;
-        forever #50 clk = ~clk;
-    end
+// state machine logic
+always@(*) begin
+    
+    case(state)
 
-    // registros necesarios para la prueba
+        UNLOCK:begin // here i'm unlock so i have to check the valids, not the invalids
 
-    integer i;
-    reg [15:0] initial_value;
-    reg [15:0] current_value;
-    reg [15:0] count;
-    intenger num_test = 5; // Número de pruebas a realizar con diferentes semillas
+            if (valid_counter >= 4'd5) begin // if i'm unlock and i have 5 valids, i go to lock
 
-    // cargar la semilla y medir el periodo
-    task measure_periodicity;
-        input [15:0] seed_value;
-        output [15:0] period;
-        begin
-            //cargar la semilla 
-            i_seed = seed_value;
-
-            @(posedge clk);
-            i_soft_rst = 1;
-            @(posedge clk);
-            i_soft_rst = 0;
-
-            // Cargar la semilla LFSR con el reset asincrónico
-            @(posedge clk);
-            i_rst = 1;
-            @(posedge clk);
-            i_rst = 0;
-
-            // obtener el valor inicial del LFSR
-            @(posedge clk);
-            initial_value = o_LFSR;
-            current_value = initial_value;
-            period = 0;
-
-            // repetir hasta que el valor actual sea igual al valor inicial
-            while(current_value != initial_value || period == 0) begin
-                @(posedge clk);
-                current_value = o_LFSR;
-                period = period + 1;
-            end
-        end
-    endtask
-
-    // Inicialización de la prueba
-    initial begin
-        // Inicialización de las señales
-        i_valid = 1;
-        i_rst = 0;
-        i_soft_rst = 0;
-
-        // probar con diferentes semillas
-        for(i = 0; i < num_test; i = i + 1) begin
+                next_state = LOCK; // next state is lock
+                valid_counter_next = 'd0; // reset the valid counter
             
-            // generar una semilla aleatoria
-            i_seed = $random;
+            end
+            else begin
 
-            // medir el periodo de la secuencia
-            measure_periodicity(i_seed, count);
+                if  (i_lfsr != lfsr_local) begin // if i'm unlock i'm out of sync, then if the secuence is still invalid i have to resync
+                    
+                    resync = 1; // resync signal is 1
+                    valid_counter_next = 'd0; // reset the valid counter
 
-            // imprimir el resultado
-            $display("Seed: %h, Period: %d", i_seed, count);
+                end
+                else begin // if the secuence is valid, i don't have to resync
+
+                    resync = 0; // resync signal is 0
+                    valid_counter_next = valid_counter + 1'b1; // increment the valid counter
+                
+                end
+
+                next_state = UNLOCK; // if i don't have 5 valids, i stay in unlock state
+
+            end
+
+            invalid_counter_next = 'd0; // don't need to check the invalids
         end
 
-        // Finalizar la simulación
-        $finish;
+        LOCK: begin // here i'm lock so i have to check the invalids, not the valids
+
+            if (invalid_counter >= 2'd3) begin // if i'm lock and i have 3 invalids, i go to unlock cause i'm out of sync
+                
+                next_state = UNLOCK; // next state is unlock
+                invalid_counter_next = 'd0; // reset the invalid counter
+                resync = 1; // resync signal is 1
+            
+            end
+            else begin
+                if  (i_lfsr != lfsr_local) begin // if i'm lock i'm out of sync, then have to 
+                    invalid_counter_next = invalid_counter + 1'b1;
+                    resync = 0; // no need to resync because the unlock state will do it
+                    
+                end
+                else begin // if the secuence is valid, i don't have to resync
+                    invalid_counter_next = 'd0; // reset the invalid counter
+                    resync = 0;
+                end
+
+                next_state = LOCK; // if i don't have 3 invalids, i stay in lock state
+            end
+
+            valid_counter_next = 'd0; // don't need to check the valids
+        end
+        default:
+        begin
+            next_state = 0;
+            valid_counter_next = 0;
+            invalid_counter_next = 0;
+            resync = 0;
+            state = 0;
+        end
+    endcase
+end
+
+// Valid and invalid counters
+always@(posedge clock or posedge rst)
+begin
+    if (rst) begin
+       valid_counter <= 'd0;
     end
+    else if (soft_rst) begin
+        valid_counter <= 'd0;
+    end
+    else if (i_valid) begin
+        valid_counter <= valid_counter_next;
+    end
+end
+
+always@(posedge clock or posedge rst)
+begin
+    if (rst) begin
+       invalid_counter <= 'd0;
+    end
+    else if (soft_rst) begin
+        invalid_counter <= 'd0;
+    end
+    else if (i_valid)
+    begin
+        invalid_counter <= invalid_counter_next;
+    end
+end
+
+// state machine
+always@(posedge clock or posedge rst)
+begin
+    if (rst) begin
+        state   <= UNLOCK;
+    end
+    else begin
+        state   <= next_state;
+    end
+end
+
+// feedback generation for the LFSR, if the LFSR is out of sync, the feedback is the input LFSR
+assign feedback = (resync) ?    i_lfsr[7] ^ (i_lfsr[6:0]==7'b0000000):
+                                lfsr_local  [7] ^   (lfsr_local[6:0]==7'b0000000);
+
+always @(posedge clock or posedge rst) begin
+    if (rst) begin
+        lfsr_local <= 8'hFF;
+    end
+    else if (soft_rst) begin
+        lfsr_local <= 8'hFF;
+    end
+    else if (resync & i_valid) begin
+        lfsr_local[0] <= feedback;
+        lfsr_local[1] <= i_lfsr[0];
+        lfsr_local[2] <= i_lfsr[1] ^ feedback;
+        lfsr_local[3] <= i_lfsr[2] ^ feedback;
+        lfsr_local[4] <= i_lfsr[3] ^ feedback;
+        lfsr_local[5] <= i_lfsr[4];
+        lfsr_local[6] <= i_lfsr[5];
+        lfsr_local[7] <= i_lfsr[6];
+    end
+    else if (i_valid) begin
+        lfsr_local[0] <= feedback;
+        lfsr_local[1] <= lfsr_local[0];
+        lfsr_local[2] <= lfsr_local[1] ^ feedback;
+        lfsr_local[3] <= lfsr_local[2] ^ feedback;
+        lfsr_local[4] <= lfsr_local[3] ^ feedback;
+        lfsr_local[5] <= lfsr_local[4];
+        lfsr_local[6] <= lfsr_local[5];
+        lfsr_local[7] <= lfsr_local[6];
+    end
+end
+
+// output logic for o_lock
+always @(posedge clock or posedge rst) begin
+    if (rst) begin
+        o_lock <= 1'b0;
+    end else begin
+        o_lock <= (state == LOCK);
+    end
+end
+
 
 endmodule
+```
+
+Finalmente el TOP es el encargado de conectar ambos módulos y de incluir la lógica necesaria para poder introducir errores en el input del checker para proabr su funcionalidad mediante un nuevo puerto llamado *__i_corrupt__* que niego el bit 0 de la secuencia.
+
+```verilog
+module top_LFSR_Checker(
+  input wire clk
+);
+
+  wire [7:0] i_lfsr; // output from the LFSR, input to the Checker
+  wire [7:0] i_seed;
+  wire [7:0] corrupted_lfsr; // signal to hold the corrupted LFSR
+
+  wire rst;
+  wire soft_rst;
+  wire i_valid;
+  wire i_corrupt; 
+  
+  wire o_lock;
+
+  // Apply corruption to the LFSR output (negate bit 0 if i_corrupt is active)
+  assign corrupted_lfsr = i_corrupt ? {i_lfsr[7:1], ~i_lfsr[0]} : i_lfsr;
+
+  // LFSR's instance
+  LFSR16_1002D lfsr_inst (
+    .clk(clk),
+    .i_valid(i_valid),
+    .i_seed(i_seed),
+    .i_rst(rst),
+    .i_soft_reset(soft_rst),
+    .LFSR(i_lfsr)
+  );
+
+  // Checker's instance with corrupted input
+  checker checker_inst (
+    .clock(clk),
+    .rst(rst),
+    .soft_rst(soft_rst),
+    .i_valid(i_valid),
+    .i_lfsr(corrupted_lfsr), // feed the potentially corrupted sequence
+    .o_lock(o_lock)
+  );
+
+  
+  //! vio instance
+  vio u_vio (
+      .clk_0       (clk),
+      .probe_in0_0  (o_lock),
+      .probe_out0_0 (i_corrupt),
+      .probe_out1_0 (i_valid),
+      .probe_out2_0 (rst),
+      .probe_out3_0 (soft_rst),
+      .probe_out4_0 (i_seed)       
+  );
+
+
+  //! ila instance - signals to check
+  ila u_ila (
+      .clk_0    (clk),
+      .probe0_0 (i_valid),
+      .probe1_0 (i_lfsr)  
+  );
+
+
+endmodule
+```
+Su testbench es el siguiente 
+
+```verilog
+module tb_top_LFSR_Checker();
+
+  // Clock and reset
+  reg clk;
+  reg rst;
+  reg soft_rst;
+  reg i_valid;
+  reg i_corrupt;
+  
+  reg [7:0] i_seed;
+
+  // Output from top module
+  wire o_lock;
+
+  // Instancia del módulo top
+  top_LFSR_Checker uut (
+    .clk(clk),
+    .rst(rst),
+    .soft_rst(soft_rst),
+    .i_valid(i_valid),
+    .i_seed(i_seed),
+    .o_lock(o_lock),
+    .i_corrupt(i_corrupt)
+  );
+
+  // Clock generation
+  initial begin
+    clk = 0;
+    forever #50 clk = ~clk; // 100 MHz clock
+  end
+
+  // Test sequence
+  initial begin
+    $display("Start of the simulation");
+    // Initialize signals
+    rst = 0;
+    soft_rst = 0;
+    i_valid = 0;
+    i_corrupt = 0; // start with no corruption
+    i_seed = 8'b11101110;
+
+    // Wait for the system to stabilize and reset
+    @(posedge clk);
+    rst = 1;
+    @(negedge clk);
+    rst = 0;
+
+    // Activate valid signal in a toggle pattern
+    forever begin
+      @(posedge clk);
+      i_valid = ~i_valid;
+    end
+  end
+
+  // Simulate corruption after a certain time
+  initial begin
+    // Let the system run normally for some time
+    #10000;
+    $display("Corrupting the sequence");
+    @(posedge i_valid);
+    i_corrupt = 1; // Start corrupting the LFSR output
+    #1000 @(posedge i_valid);
+    i_corrupt = 0; // Stop corrupting the LFSR output
+    
+
+    // Run for some time and observe outputs
+    #5000;
+
+    $display("Corrupting the sequence");
+    @(posedge i_valid);
+    i_corrupt = 1; // Start corrupting the LFSR output
+    #1000 @(posedge i_valid);
+    i_corrupt = 0; // Stop corrupting the LFSR output
+
+    // Run for some time and observe outputs
+    #5000;
+
+    // Stop simulation
+    $finish;
+  end
+
+
+endmodule
+```
+
 
 
 
